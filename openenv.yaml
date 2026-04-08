@@ -1,0 +1,26 @@
+name: insurance-claims-triage
+description: >
+  Multi-step RL environment simulating insurance claims triage decisions.
+  Agent must balance fraud detection, operational cost, and processing efficiency.
+
+version: 0.1.0
+
+entrypoint: environment.env:InsuranceClaimsEnv
+
+tasks:
+  - name: easy
+    description: Low-risk claims
+  - name: medium
+    description: Ambiguous claims
+  - name: hard
+    description: Fraud-like claims
+
+observation_space:
+  type: object
+
+action_space:
+  type: string
+
+reward_range:
+  min: 0.0
+  max: 1.0
