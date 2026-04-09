@@ -55,7 +55,10 @@ def main():
 
     for i, claim in enumerate(scenarios):
 
+        difficulty = classify_scenario(claim)
+
         print(f"\nCase {i+1}")
+        print(f"[START] task={difficulty}", flush=True)
 
         env = InsuranceClaimsEnv(claim)
 
@@ -63,6 +66,7 @@ def main():
 
         total_reward = 0
         done = False
+        step_num = 0
 
         while not done:
 
@@ -71,14 +75,14 @@ def main():
             obs, reward, terminated, truncated, info = env.step(action)
 
             done = terminated or truncated
+            step_num += 1
 
             print(
                 f" Step {env.state.steps_taken} -> {action.value} | reward {reward:.2f}"
             )
+            print(f"[STEP] step={step_num} reward={reward}", flush=True)
 
             total_reward += reward
-
-        difficulty = classify_scenario(claim)
 
         score = max(0.0, min(1.0, total_reward))
 
@@ -91,6 +95,7 @@ def main():
             f"Docs: {len(claim.documents_submitted)} | "
             f"Final Score: {score:.2f}"
         )
+        print(f"[END] task={difficulty} score={score} steps={step_num}", flush=True)
 
     easy_avg = safe_avg(scores["easy"])
     medium_avg = safe_avg(scores["medium"])
