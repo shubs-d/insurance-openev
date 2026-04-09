@@ -9,6 +9,16 @@ app = FastAPI(title="Insurance Claims Triage RL Environment")
 env: InsuranceClaimsEnv | None = None
 
 
+@app.get("/")
+def read_root():
+    return {
+        "status": "Online",
+        "message": "Insurance Claims Triage Environment API is actively running",
+        "docs": "Access /docs for the Swagger UI"
+    }
+
+
+
 @app.post("/reset")
 def reset():
     global env
