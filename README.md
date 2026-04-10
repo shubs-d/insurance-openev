@@ -209,6 +209,43 @@ Run:
 python inference.py
 ```
 
+Run with explicit agent mode:
+
+```
+python inference.py --agent rule_based
+python inference.py --agent llm
+```
+
+---
+
+## Environment Variables
+
+The LLM agent uses an OpenAI-compatible API client and supports both OpenAI and Hugging Face Inference Endpoints.
+
+- `OPENAI_API_KEY`: OpenAI API key (optional if `HF_TOKEN` is provided)
+- `MODEL_NAME`: model identifier used for chat completions (required for `--agent llm`)
+- `API_BASE_URL`: optional OpenAI-compatible base URL (defaults to `https://api.openai.com/v1`)
+- `HF_TOKEN`: optional token for Hugging Face endpoints; used as API key fallback
+
+OpenAI example:
+
+```bash
+export OPENAI_API_KEY=your_openai_key
+export MODEL_NAME=gpt-4o-mini
+python inference.py --agent llm
+```
+
+Hugging Face OpenAI-compatible endpoint example:
+
+```bash
+export API_BASE_URL=https://api-inference.huggingface.co/v1
+export HF_TOKEN=your_hf_token
+export MODEL_NAME=your-endpoint-model
+python inference.py --agent llm
+```
+
+If `--agent llm` is selected without required configuration, inference exits gracefully with a clear error message.
+
 ---
 
 ## Requirements
@@ -217,6 +254,7 @@ python inference.py
 pydantic
 gymnasium
 numpy
+openai
 ```
 
 ---

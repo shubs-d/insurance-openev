@@ -1,3 +1,4 @@
 pydantic
 gymnasium
 numpy
+openai

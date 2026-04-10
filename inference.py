@@ -1,32 +1,9 @@
+import argparse
+import os
+
+from agents.baseline import llm_agent, rule_based_agent
 from environment.env import InsuranceClaimsEnv
 from environment.scenarios import generate_scenarios, classify_scenario
-from environment.models import ClaimAction
-
-
-# -------------------------
-# Baseline Agent
-# -------------------------
-
-def baseline_agent(obs):
-
-    fraud = obs[0]
-    amount = obs[1] * 20000
-    docs = obs[2] * 5
-
-    if fraud > 0.8:
-        return ClaimAction.escalate_fraud_review
-
-    elif fraud > 0.6:
-        return ClaimAction.assign_specialist_adjuster
-
-    elif docs < 1:
-        return ClaimAction.request_more_documents
-
-    elif fraud < 0.25 and amount < 5000:
-        return ClaimAction.auto_approve
-
-    else:
-        return ClaimAction.assign_tier1_adjuster
 
 
 # -------------------------
@@ -37,11 +14,62 @@ def safe_avg(arr):
     return sum(arr) / len(arr) if len(arr) > 0 else 0.0
 
 
+def validate_llm_environment(agent_mode: str):
+    required = ["OPENAI_API_KEY", "MODEL_NAME"]
+    missing_required = [name for name in required if not os.getenv(name)]
+
+    if missing_required:
+        print(
+            "[WARN] Missing environment variables for LLM mode: "
+            + ", ".join(missing_required),
+            flush=True,
+        )
+
+    # HF_TOKEN is allowed as a key fallback for OpenAI-compatible HF endpoints.
+    has_api_key = bool(os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN"))
+    has_model_name = bool(os.getenv("MODEL_NAME"))
+
+    if agent_mode == "llm" and (not has_api_key or not has_model_name):
+        missing = []
+        if not has_api_key:
+            missing.append("OPENAI_API_KEY or HF_TOKEN")
+        if not has_model_name:
+            missing.append("MODEL_NAME")
+
+        print(
+            "[ERROR] LLM agent selected but missing configuration: "
+            + ", ".join(missing),
+            flush=True,
+        )
+        return False
+
+    return True
+
+
+def select_action(obs, agent_mode: str):
+    if agent_mode == "llm":
+        return llm_agent(obs)
+
+    return rule_based_agent(obs)
+
+
 # -------------------------
 # Main Evaluation
 # -------------------------
 
 def main():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--agent",
+        choices=["rule_based", "llm"],
+        default="rule_based",
+        help="Select inference policy",
+    )
+    args = parser.parse_args()
+
+    if not validate_llm_environment(args.agent):
+        return 1
 
     print("\nRunning RL Evaluation...\n")
 
@@ -70,7 +98,7 @@ def main():
 
         while not done:
 
-            action = baseline_agent(obs)
+            action = select_action(obs, args.agent)
 
             obs, reward, terminated, truncated, info = env.step(action)
 
@@ -115,6 +143,8 @@ def main():
 
     print("--------------------------\n")
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

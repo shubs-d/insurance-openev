@@ -8,6 +8,7 @@ dependencies = [
     "pydantic",
     "numpy",
     "gymnasium",
+    "openai",
     "openenv-core>=0.2.0",
 ]
 
@@ -19,4 +20,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["environment", "graders", "tasks", "server"]
+packages = ["environment", "graders", "tasks", "server", "agents"]
