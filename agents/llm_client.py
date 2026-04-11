@@ -5,19 +5,15 @@ from openai import OpenAI
 
 from environment.models import ClaimAction
 
-
-DEFAULT_BASE_URL = "https://api.openai.com/v1"
-
-
-def _get_api_key() -> str | None:
-    """Prefer OPENAI_API_KEY but allow HF_TOKEN for Hugging Face OpenAI-compatible endpoints."""
-    return os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN")
-
-
 def build_client() -> OpenAI:
+    assert "API_KEY" in os.environ, "Missing API_KEY"
+    assert "API_BASE_URL" in os.environ, "Missing API_BASE_URL"
+
+    print("Using API_BASE_URL:", os.environ["API_BASE_URL"], flush=True)
+
     return OpenAI(
-        api_key=_get_api_key(),
-        base_url=os.getenv("API_BASE_URL", DEFAULT_BASE_URL),
+        api_key=os.environ["API_KEY"],
+        base_url=os.environ["API_BASE_URL"],
     )
 
 
@@ -42,9 +38,7 @@ def _extract_action(raw_text: str) -> str:
 
 
 def generate_action(prompt: str) -> str:
-    model_name = os.getenv("MODEL_NAME")
-    if not model_name:
-        raise ValueError("MODEL_NAME is required for LLM agent mode")
+    model_name = os.environ.get("MODEL_NAME", "gpt-4o-mini")
 
     client = build_client()
     completion = client.chat.completions.create(
@@ -52,13 +46,16 @@ def generate_action(prompt: str) -> str:
         messages=[
             {
                 "role": "system",
+                "content": "You are an insurance claims decision agent.",
+            },
+            {
+                "role": "user",
                 "content": (
-                    "You are an insurance claims triage policy. "
+                    f"{prompt}\n"
                     "Return exactly one action token and no other text. "
                     f"Allowed actions: {_valid_actions_text(ClaimAction)}"
                 ),
             },
-            {"role": "user", "content": prompt},
         ],
         temperature=0,
     )

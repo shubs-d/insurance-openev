@@ -1,5 +1,4 @@
 import argparse
-import os
 
 from agents.baseline import llm_agent, rule_based_agent
 from environment.env import InsuranceClaimsEnv
@@ -12,38 +11,6 @@ from environment.scenarios import generate_scenarios, classify_scenario
 
 def safe_avg(arr):
     return sum(arr) / len(arr) if len(arr) > 0 else 0.0
-
-
-def validate_llm_environment(agent_mode: str):
-    required = ["OPENAI_API_KEY", "MODEL_NAME"]
-    missing_required = [name for name in required if not os.getenv(name)]
-
-    if missing_required:
-        print(
-            "[WARN] Missing environment variables for LLM mode: "
-            + ", ".join(missing_required),
-            flush=True,
-        )
-
-    # HF_TOKEN is allowed as a key fallback for OpenAI-compatible HF endpoints.
-    has_api_key = bool(os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN"))
-    has_model_name = bool(os.getenv("MODEL_NAME"))
-
-    if agent_mode == "llm" and (not has_api_key or not has_model_name):
-        missing = []
-        if not has_api_key:
-            missing.append("OPENAI_API_KEY or HF_TOKEN")
-        if not has_model_name:
-            missing.append("MODEL_NAME")
-
-        print(
-            "[ERROR] LLM agent selected but missing configuration: "
-            + ", ".join(missing),
-            flush=True,
-        )
-        return False
-
-    return True
 
 
 def select_action(obs, agent_mode: str):
@@ -63,13 +30,10 @@ def main():
     parser.add_argument(
         "--agent",
         choices=["rule_based", "llm"],
-        default="rule_based",
+        default="llm",
         help="Select inference policy",
     )
     args = parser.parse_args()
-
-    if not validate_llm_environment(args.agent):
-        return 1
 
     print("\nRunning RL Evaluation...\n")
 

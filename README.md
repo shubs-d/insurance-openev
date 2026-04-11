@@ -220,31 +220,22 @@ python inference.py --agent llm
 
 ## Environment Variables
 
-The LLM agent uses an OpenAI-compatible API client and supports both OpenAI and Hugging Face Inference Endpoints.
+The LLM agent uses the evaluator's OpenAI-compatible proxy.
 
-- `OPENAI_API_KEY`: OpenAI API key (optional if `HF_TOKEN` is provided)
-- `MODEL_NAME`: model identifier used for chat completions (required for `--agent llm`)
-- `API_BASE_URL`: optional OpenAI-compatible base URL (defaults to `https://api.openai.com/v1`)
-- `HF_TOKEN`: optional token for Hugging Face endpoints; used as API key fallback
+- `API_KEY`: required proxy API key
+- `API_BASE_URL`: required proxy base URL
+- `MODEL_NAME`: optional model identifier (defaults to `gpt-4o-mini`)
 
-OpenAI example:
+Evaluator proxy example:
 
 ```bash
-export OPENAI_API_KEY=your_openai_key
+export API_KEY=your_proxy_key
+export API_BASE_URL=https://your-proxy-base-url/v1
 export MODEL_NAME=gpt-4o-mini
 python inference.py --agent llm
 ```
 
-Hugging Face OpenAI-compatible endpoint example:
-
-```bash
-export API_BASE_URL=https://api-inference.huggingface.co/v1
-export HF_TOKEN=your_hf_token
-export MODEL_NAME=your-endpoint-model
-python inference.py --agent llm
-```
-
-If `--agent llm` is selected without required configuration, inference exits gracefully with a clear error message.
+`inference.py` defaults to `--agent llm` so at least one real proxy call is made during evaluation.
 
 ---
 
