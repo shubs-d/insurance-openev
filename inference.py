@@ -1,3 +1,4 @@
+
 import argparse
 import sys
 import traceback
@@ -94,7 +95,7 @@ def main() -> int:
                     f"Docs: {len(claim.documents_submitted)} | "
                     f"Final Score: {score:.6f}"
                 )
-                print(f"[END] task={difficulty} score={score} steps={step_num}", flush=True)
+                print(f"[END] task={difficulty} score={score:.4f} steps={step_num}", flush=True)
 
             except Exception:
                 traceback.print_exc()
@@ -103,7 +104,7 @@ def main() -> int:
                 fallback_score = safe_score(0.0)
                 print(f"[START] task={difficulty}", flush=True)
                 print(f"[STEP] step=1 reward=0", flush=True)
-                print(f"[END] task={difficulty} score={fallback_score} steps=1", flush=True)
+                print(f"[END] task={difficulty} score={fallback_score:.4f} steps=1", flush=True)
                 scores.setdefault(difficulty, []).append(fallback_score)
 
         easy_avg = safe_score(safe_avg(scores["easy"]))
