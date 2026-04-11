@@ -77,6 +77,10 @@ def generate_action(prompt: str) -> str:
         message = completion.choices[0].message.content or ""
         return _extract_action(message)
 
+    except RuntimeError:
+        # Configuration errors (missing API key) — let llm_agent fall back
+        # to rule_based_agent instead of returning a dumb fallback
+        raise
     except Exception:
         traceback.print_exc()
         print(
