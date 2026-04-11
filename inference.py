@@ -6,6 +6,7 @@ from agents.baseline import llm_agent, rule_based_agent
 from environment.env import InsuranceClaimsEnv
 from environment.models import ClaimAction
 from environment.scenarios import generate_scenarios, classify_scenario
+from graders.grader import normalize_score
 
 
 # -------------------------
@@ -82,7 +83,7 @@ def main() -> int:
 
                     total_reward += reward
 
-                score = max(0.0, min(1.0, total_reward))
+                score = normalize_score(max(0.0, min(1.0, total_reward)))
 
                 scores[difficulty].append(score)
 
@@ -99,10 +100,11 @@ def main() -> int:
                 traceback.print_exc()
                 # Emit required structured output even on failure
                 difficulty = "easy"
+                fallback_score = normalize_score(0.0)
                 print(f"[START] task={difficulty}", flush=True)
                 print(f"[STEP] step=1 reward=0", flush=True)
-                print(f"[END] task={difficulty} score=0 steps=1", flush=True)
-                scores.setdefault(difficulty, []).append(0.0)
+                print(f"[END] task={difficulty} score={fallback_score} steps=1", flush=True)
+                scores.setdefault(difficulty, []).append(fallback_score)
 
         easy_avg = safe_avg(scores["easy"])
         medium_avg = safe_avg(scores["medium"])
