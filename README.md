@@ -51,10 +51,17 @@ Our RL agent helps:
 ## Architecture
 
 ```
+agents/
+    baseline.py
+    llm_client.py
+
 environment/
     env.py
     models.py
     scenarios.py
+
+server/
+    app.py
 
 tasks/
     easy_task.py
@@ -65,6 +72,7 @@ graders/
     grader.py
 
 inference.py
+openenv.yaml
 requirements.txt
 Dockerfile
 README.md
@@ -85,19 +93,19 @@ The generator models real-world claim characteristics:
 We generate three difficulty levels:
 
 ### Easy Scenarios
-- Low fraud probability
-- Low claim amount
-- Sufficient documentation
+- Low fraud probability (0.0 – 0.3)
+- Low claim amount ($500 – $5,000)
+- Sufficient documentation (2–4 docs)
 
 ### Medium Scenarios
-- Moderate fraud probability
+- Moderate fraud probability (0.3 – 0.7)
 - Mixed signals
 - Some ambiguity
 
 ### Hard Scenarios
-- Conflicting signals
-- High claim amount
-- Limited documentation
+- High fraud probability (0.5 – 0.95)
+- High claim amount ($8,000 – $20,000)
+- Limited documentation (0–2 docs)
 - High prior claims
 
 This approach allows:
@@ -107,6 +115,7 @@ This approach allows:
 - Robust RL training
 
 ---
+
 ## RL Environment
 
 We built a custom Gym-compatible environment:
@@ -128,17 +137,19 @@ This allows training RL agents.
 
 ## Observations
 
-Each claim contains:
-
-- Fraud risk score
-- Claim amount
-- Number of documents
-
-Observation vector:
+Each claim is encoded as a 5-dimensional observation vector:
 
 ```
-[fraud_score, claim_amount, num_documents]
+[
+  fraud_risk_score,
+  claim_amount / 20000,
+  documents_submitted / 5,
+  location_risk_score,
+  prior_claims_count / 10
+]
 ```
+
+All values are normalized to the [0, 1] range.
 
 ---
 
@@ -158,15 +169,20 @@ Agent can choose:
 
 Positive rewards:
 
-- Correct approval
-- Fraud detection
-- Efficient routing
+- Correct approval of clean claims (+1.0)
+- Fraud escalation on high-risk claims (+0.85)
+- Specialist assignment for complex claims (+0.6)
+- Document request when docs are sparse (+0.3)
 
 Negative rewards:
 
-- Wrong approval
-- Unnecessary escalation
-- Poor routing
+- Wrong approval of risky claims (-0.5)
+- Unnecessary escalation (-0.3)
+- Poor routing (-0.2)
+- Step penalty per action (-0.05)
+- Repeated action penalty (-0.15)
+
+All final task scores are clamped to the open interval (0.01, 0.99).
 
 ---
 
@@ -175,9 +191,9 @@ Negative rewards:
 ```
 Case 1
 
-Step 1 -> auto_approve | reward 1.00
+Step 1 -> auto_approve | reward 0.95
 
-Final Score: 1.00
+Final Score: 0.9500
 ```
 
 ---
@@ -188,8 +204,8 @@ Environment follows Gymnasium API:
 
 - reset()
 - step()
-- observation_space
-- action_space
+- observation_space (Box, shape=(5,))
+- action_space (Discrete, 5 actions)
 
 This enables RL training.
 
@@ -254,12 +270,8 @@ openai
 
 We test:
 
-- 60 scenarios
-- Easy
-- Medium
-- Hard
-
-Final Score = Average Performance
+- 60 scenarios (20 easy, 20 medium, 20 hard)
+- Final Score = Average of (Easy Avg + Medium Avg + Hard Avg) / 3
 
 ---
 
@@ -268,7 +280,7 @@ Final Score = Average Performance
 - RL Environment ✓
 - Reward shaping ✓
 - Multi-step decisions ✓
-- Agent baseline ✓
+- Agent baseline (rule-based + LLM) ✓
 - Evaluation system ✓
 - Gym compatibility ✓
 - Docker support ✓
