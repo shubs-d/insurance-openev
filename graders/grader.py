@@ -2,7 +2,7 @@ from environment.models import ClaimAction, ClaimObservation
 
 
 def safe_score(x: float) -> float:
-    EPS = 1e-6
+    EPS = 1e-2
     if x <= 0.0:
         print(f"[BAD SCORE DETECTED] {x}", flush=True)
         return EPS
