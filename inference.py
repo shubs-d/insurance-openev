@@ -6,7 +6,7 @@ from agents.baseline import llm_agent, rule_based_agent
 from environment.env import InsuranceClaimsEnv
 from environment.models import ClaimAction
 from environment.scenarios import generate_scenarios, classify_scenario
-from graders.grader import normalize_score
+from graders.grader import safe_score
 
 
 # -------------------------
@@ -83,7 +83,7 @@ def main() -> int:
 
                     total_reward += reward
 
-                score = normalize_score(max(0.0, min(1.0, total_reward)))
+                score = safe_score(max(0.0, min(1.0, total_reward)))
 
                 scores[difficulty].append(score)
 
@@ -92,7 +92,7 @@ def main() -> int:
                     f"Fraud: {claim.fraud_risk_score:.2f} | "
                     f"Amt: {claim.claim_amount} | "
                     f"Docs: {len(claim.documents_submitted)} | "
-                    f"Final Score: {score:.2f}"
+                    f"Final Score: {score:.6f}"
                 )
                 print(f"[END] task={difficulty} score={score} steps={step_num}", flush=True)
 
@@ -100,33 +100,33 @@ def main() -> int:
                 traceback.print_exc()
                 # Emit required structured output even on failure
                 difficulty = "easy"
-                fallback_score = normalize_score(0.0)
+                fallback_score = safe_score(0.0)
                 print(f"[START] task={difficulty}", flush=True)
                 print(f"[STEP] step=1 reward=0", flush=True)
                 print(f"[END] task={difficulty} score={fallback_score} steps=1", flush=True)
                 scores.setdefault(difficulty, []).append(fallback_score)
 
-        easy_avg = safe_avg(scores["easy"])
-        medium_avg = safe_avg(scores["medium"])
-        hard_avg = safe_avg(scores["hard"])
+        easy_avg = safe_score(safe_avg(scores["easy"]))
+        medium_avg = safe_score(safe_avg(scores["medium"]))
+        hard_avg = safe_score(safe_avg(scores["hard"]))
 
-        final_score = (easy_avg + medium_avg + hard_avg) / 3
-
-        print("\n--------------------------")
-
-        print(f"Easy Avg Score: {easy_avg:.2f}")
-        print(f"Medium Avg Score: {medium_avg:.2f}")
-        print(f"Hard Avg Score: {hard_avg:.2f}")
+        final_score = safe_score((easy_avg + medium_avg + hard_avg) / 3)
 
         print("\n--------------------------")
 
-        print(f"Final Score: {final_score:.2f}")
+        print(f"Easy Avg Score: {easy_avg:.6f}")
+        print(f"Medium Avg Score: {medium_avg:.6f}")
+        print(f"Hard Avg Score: {hard_avg:.6f}")
+
+        print("\n--------------------------")
+
+        print(f"Final Score: {final_score:.6f}")
 
         print("--------------------------\n")
 
     except Exception:
         traceback.print_exc()
-        print("[FATAL] main() encountered an error, exiting gracefully.", flush=True)
+        print("[FATAL ERROR] main() encountered an error, exiting gracefully.", flush=True)
 
     return 0
 

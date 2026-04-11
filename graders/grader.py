@@ -1,9 +1,15 @@
 from environment.models import ClaimAction, ClaimObservation
 
 
-def normalize_score(score: float) -> float:
+def safe_score(x: float) -> float:
     EPS = 1e-6
-    return max(EPS, min(1.0 - EPS, score))
+    if x <= 0.0:
+        print(f"[BAD SCORE DETECTED] {x}", flush=True)
+        return EPS
+    if x >= 1.0:
+        print(f"[BAD SCORE DETECTED] {x}", flush=True)
+        return 1.0 - EPS
+    return x
 
 
 def grade_claim(observation: ClaimObservation, action: ClaimAction) -> float:
@@ -12,35 +18,37 @@ def grade_claim(observation: ClaimObservation, action: ClaimAction) -> float:
     amount = observation.claim_amount
     docs = observation.documents_submitted
 
+    raw = 0.2  # default
+
     # Fraud scenario
     if fraud > 0.8:
         if action == ClaimAction.escalate_fraud_review:
-            return normalize_score(1.0)
+            raw = 0.99
         elif action == ClaimAction.assign_specialist_adjuster:
-            return normalize_score(0.6)
+            raw = 0.6
         else:
-            return normalize_score(0.0)
+            raw = 0.01
 
     # Missing docs
-    if len(docs) < 2:
+    elif len(docs) < 2:
         if action == ClaimAction.request_more_documents:
-            return normalize_score(1.0)
+            raw = 0.99
         elif action == ClaimAction.assign_tier1_adjuster:
-            return normalize_score(0.5)
+            raw = 0.5
         else:
-            return normalize_score(0.0)
+            raw = 0.01
 
     # High amount
-    if amount > 10000:
+    elif amount > 10000:
         if action == ClaimAction.assign_specialist_adjuster:
-            return normalize_score(1.0)
+            raw = 0.99
         elif action == ClaimAction.assign_tier1_adjuster:
-            return normalize_score(0.6) 
+            raw = 0.6
         else:
-            return normalize_score(0.0)
+            raw = 0.01
 
     # Clean claim
-    if action == ClaimAction.auto_approve:
-        return normalize_score(1.0)
+    elif action == ClaimAction.auto_approve:
+        raw = 0.99
 
-    return normalize_score(0.2)
+    return safe_score(raw)
